@@ -21,6 +21,10 @@ def get_dns_record(udp_socket, domain: str, parent_server: str, record_type):
     5. Additional
     """
     return buff
+
+
+
+
 if __name__ == '__main__':
     sock = socket(AF_INET, SOCK_DGRAM)
     temp = get_dns_record(sock, "gvsu.edu", ROOT_SERVER, "A")

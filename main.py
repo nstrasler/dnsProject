@@ -20,7 +20,7 @@ if __name__ == '__main__':
         urlArray = formatInput.formatInput(url)     #splits into array of edu, gvsu.edu, www.gvsu.edu
         #record = get_dns_record(sock, "gvsu.edu", 'joselyn.ns.cloudflare.com.', "A")
         cacheResult = []
-        for var in (reversed(urlArray)):
+        for var in (reversed(urlArray)): #TODO Fix to just check if whole string cached
             if var in cacheDict:
                 cacheResult = cacheDict[var]
                 break
@@ -30,18 +30,30 @@ if __name__ == '__main__':
         #initialRecord = get_dns_record(sock, "gvsu.edu", ROOT_SERVER, "A")
 
         while True:
-            rootReturn = ""
-            if not cacheResult or cacheResult[1] != "ROOT":
-                record = get_dns_record(sock, urlArray[0],ROOT_SERVER,"NS")             #TODO errorno check
-                cacheDict.setdefault(urlArray[0], [record.auth[0].rdata]).append("ROOT") #cache as ROOT if succesful
-                rootReturn = record.auth[0].rdata
-            else:
-                rootReturn = cacheResult[0]
+            if not url in cacheDict:
+                try:
+                    record = get_dns_record(sock, urlArray[0],ROOT_SERVER,"NS")
+                    cacheDict[url] = record
 
-            counter = 0
+                    print(record.auth[0].rdata)
+                except:
+                    print("Error in getting dns record")
+            else:
+                record = cacheDict[url]
+            counter = 0 #for timeout error to increment server
             while True:
-                if not cacheResult or cacheResult[1] != "TLD":
-                    record = get_dns_record(sock, urlArray[1], rootReturn, "NS")
+                if not urlArray[1] in cacheDict: #TODO fix double check cache logic
+                    try:
+                        record = get_dns_record(sock, urlArray[1], str(record.auth[counter].rdata), "NS")
+                        print(record.auth[0].rdata)
+                    except:
+                        print("Error in getting TLD record")
+                        counter = counter + 1
+                else:
+                    record = cacheDict[urlArray[1]]
+
+
+
 
 
 
