@@ -1,3 +1,5 @@
+
+
 def formatInput(input):
 
     temp = input.removesuffix(".")
@@ -9,5 +11,12 @@ def formatInput(input):
         result.append(current_part)
 
     return result
+
+
+def listCache():
+
+
+
+
 if __name__ == '__main__':
     print(formatInput('1.2.3.4.'))
