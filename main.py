@@ -53,15 +53,21 @@ def listCache():
 
 def deleteCacheEntry(input):
     keys = list(cacheDict.keys())
-    if 0 <= input < len(keys):
+    if input <= len(keys):
         target = keys[input-1]
         del cacheDict[target]
+    print("Deleted cache entry " + str(input))
+
+
 
 if __name__ == '__main__':
     sock = socket(AF_INET, SOCK_DGRAM)
     command = ""
+    cnameCaching = []
 
     while True:
+        if cnameCaching:
+            cnameCaching.clear()
         command = "ROOT"
         url = input("type your url please: ")
 
@@ -73,18 +79,23 @@ if __name__ == '__main__':
             listCache()
             continue
         elif url == ".clear":
+            print("cleared cache")
+            cnameCaching.clear()
             cacheDict.clear()
             continue
         elif match:
             num = int(match.group(1))
             if num and len(cacheDict) >= num > 0:
                     deleteCacheEntry(num)
+            else:
+                print("Delete request out of range or invalid number please try again")
             continue
 
 
         while command == "CNAME" or command == "ROOT":
             urlArray = formatInput(url)
-            if urlArray[-1] in cacheDict and len(urlArray) > 2 and cacheDict[urlArray[-1]].header.a and cacheDict[urlArray[-1]].rr[0].rtype != 5:
+
+            if urlArray[-1] in cacheDict and len(urlArray) > 2 and cacheDict[urlArray[-1]].header.a and cacheDict[urlArray[-1]].rr[0].rtype ==1:
                 record = cacheDict[urlArray[-1]]
                 print("Cache hit off full url")
                 for x in record.rr:
@@ -143,29 +154,37 @@ if __name__ == '__main__':
                         else:
                             print("Trying an NS server from Authoritative server : " + tempstr)
                             try:
+                                tempRecord = record
                                 record = get_dns_record(sock, urlArray[-1], str(record.auth[counter].rdata), "A")
                                 if record.header.rcode != 0:
+                                    record = tempRecord
                                     counter = counter + 1
                                     print("Error returned in getting response from NS server trying next record")
                                     continue
-                                else:
-                                    cacheDict[urlArray[-1]] = record
+
                             except:
                                 print("Failed message in getting A from Authoritative server trying next server")
                                 counter = counter + 1
                                 continue
                         if record.header.a and (record.rr[0].rtype == 1 or record.rr[0].rtype == 28): #A TYPE or AAAA Type
+                            cacheDict[url] = record
+                            for cname in cnameCaching:
+                                cacheDict[cname] = record
+
+                            print("IP found!")
                             for x in record.rr:
                                 print(x.rdata)
                             command = "A"
                             break
                         elif record.header.a and record.rr[counter].rtype == 5: #CNAME
                             command = "CNAME"
+                            cnameCaching.append(url)
                             url = str(record.rr[counter].rdata)
                             print("CNAME Found: "+url)
                             break
                         elif record.header.auth and record.auth[counter].rtype == 2:
                             command = "NS"
+                            counter = 0
                         else:
                             command = "EXIT"
                     else:
